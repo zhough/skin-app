@@ -3,8 +3,6 @@
     <text class="title">个人信息设置</text>
     <text class="desc">请填写您的基本信息，帮助我们提供更精准的建议</text>
 
-   
-
     <!-- 调试信息显示 -->
     <text v-if="isDebug" class="debug-info">{{ debugInfo }}</text>
     
@@ -92,8 +90,6 @@ const handleInput = (e) => {
   // 保留字符串类型，因为input返回的是字符串
   age.value = e.detail.value;
 };
-
-// 性别选择处理 - 这里不使用，改为直接在标签上绑定点击事件
 
 // 保存并跳转
 const saveAndRedirect = () => {

@@ -71,10 +71,11 @@ import { getCurrentUser } from '@/services/auth-service.js';
 // 用户信息（从全局获取）
 const userInfo = ref({
   age: '',
-  gender: ''
+  gender: '',
+  id: '' // 确保包含用户ID
 });
 
-// 皮肤类型（默认未知，用户可在聊天中提及或通过测试获取）
+// 皮肤类型
 const skinType = ref('未知');
 
 // 聊天消息列表
@@ -103,16 +104,14 @@ onMounted(() => {
       ...user
     };
   }
-
-  // 检查用户信息是否完善
   checkUserInfo();
   scrollToBottom();
 });
 
 // 检查用户信息是否完善
 const checkUserInfo = () => {
-  if (!userInfo.value.age || !userInfo.value.gender) {
-    const confirmed = window.confirm('请完善年龄和性别信息，以便提供更精准的建议');
+  if (!userInfo.value.age || !userInfo.value.gender || !userInfo.value.id) {
+    const confirmed = window.confirm('请完善个人信息（包括ID、年龄和性别），以便提供更精准的建议');
     if (confirmed) {
       window.location.href = '/personal';
     }
@@ -125,16 +124,17 @@ const sendMessage = async () => {
   if (!input || isLoading.value) return;
   
   // 再次检查用户信息
-  if (!userInfo.value.age || !userInfo.value.gender) {
+  if (!userInfo.value.age || !userInfo.value.gender || !userInfo.value.id) {
     checkUserInfo();
     return;
   }
   
-  // 添加用户消息
-  messages.value.push({
+  // 添加用户消息（修复不显示问题）
+  const userMessage = {
     role: 'user',
     content: input
-  });
+  };
+  messages.value.push(userMessage);
   
   // 清空输入框
   userInput.value = '';
@@ -146,11 +146,15 @@ const sendMessage = async () => {
   isLoading.value = true;
   
   try {
-    // 调用API获取回复（使用getAISkinConsultation）
+    // 调用API获取回复
     const response = await getAISkinConsultation({
-      userInfo: userInfo.value,
+      userId: userInfo.value.id, // 明确传递用户ID
+      userInfo: {
+        age: Number(userInfo.value.age), // 确保是数字类型
+        gender: userInfo.value.gender
+      },
       skinType: skinType.value,
-      question: input // 将用户输入作为问题传入
+      question: input
     });
     
     // 添加AI回复
@@ -161,12 +165,12 @@ const sendMessage = async () => {
   } catch (error) {
     messages.value.push({
       role: 'assistant',
-      content: '抱歉，暂时无法获取回复，请稍后再试。'
+      content: `抱歉，请求失败: ${error.message}`
     });
     console.error('API调用失败:', error);
   } finally {
-    // 隐藏加载状态
     isLoading.value = false;
+    scrollToBottom();
   }
 };
 
@@ -188,7 +192,7 @@ watch(messages, () => {
 
 <style scoped>
 .ai-chat-page {
-  padding-bottom: 60px;
+  padding-bottom: 80px;
   background-color: #f5f5f5;
   min-height: 100vh;
   display: flex;
@@ -197,14 +201,15 @@ watch(messages, () => {
 
 .page-header {
   padding: 20px;
-  background-color: #ff6b6b;
+  background: linear-gradient(135deg, #4e8cff, #0051d5);
   color: white;
   text-align: center;
   margin-bottom: 15px;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.1);
 }
 
 .page-title {
-  font-size: 20px;
+  font-size: 22px;
   font-weight: bold;
   display: block;
   margin-bottom: 8px;
@@ -236,6 +241,18 @@ watch(messages, () => {
   display: flex;
   margin-bottom: 18px;
   max-width: 85%;
+  animation: fadeIn 0.3s ease-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .user-message {
@@ -249,6 +266,7 @@ watch(messages, () => {
   border-radius: 50%;
   overflow: hidden;
   flex-shrink: 0;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
 }
 
 .avatar image {
@@ -263,13 +281,15 @@ watch(messages, () => {
   line-height: 1.6;
   font-size: 15px;
   word-break: break-all;
+  max-width: calc(100% - 50px);
 }
 
 .user-message .message-content {
-  background-color: #ff6b6b;
+  background-color: #4e8cff;
   color: white;
   border-top-right-radius: 4px;
   margin-left: 10px;
+  box-shadow: 0 1px 3px rgba(78, 140, 255, 0.2);
 }
 
 .assistant-message .message-content {
@@ -290,7 +310,7 @@ watch(messages, () => {
   width: 10px;
   height: 10px;
   border-radius: 50%;
-  background-color: #ff6b6b;
+  background-color: #4e8cff;
   margin: 0 5px;
   animation: loading 1.4s infinite ease-in-out both;
 }
@@ -314,7 +334,7 @@ watch(messages, () => {
 
 .input-area {
   display: flex;
-  padding: 10px 15px;
+  padding: 15px;
   background-color: white;
   border-top: 1px solid #eee;
   position: fixed;
@@ -322,44 +342,61 @@ watch(messages, () => {
   left: 0;
   right: 0;
   z-index: 10;
+  box-shadow: 0 -2px 10px rgba(0,0,0,0.05);
 }
 
 .input-textarea {
   flex: 1;
-  min-height: 40px;
+  min-height: 44px;
   max-height: 120px;
-  padding: 10px 15px;
+  padding: 12px 15px;
   border: 1px solid #ddd;
-  border-radius: 20px;
+  border-radius: 22px;
   font-size: 15px;
   margin-right: 10px;
+  resize: none;
+  transition: all 0.3s;
+}
+
+.input-textarea:focus {
+  border-color: #4e8cff;
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(78, 140, 255, 0.1);
 }
 
 .send-button {
   width: 60px;
-  height: 40px;
-  background-color: #ff6b6b;
+  height: 44px;
+  background-color: #4e8cff;
   color: white;
-  border-radius: 20px;
+  border-radius: 22px;
   font-size: 15px;
   display: flex;
   align-items: center;
   justify-content: center;
+  border: none;
+  transition: all 0.3s;
+}
+
+.send-button:not(:disabled):hover {
+  background-color: #3a75e0;
+  transform: translateY(-1px);
 }
 
 .send-button:disabled {
   background-color: #ccc;
+  cursor: not-allowed;
 }
 
 .bottom-disclaimer {
   position: fixed;
-  bottom: 60px;
+  bottom: 70px;
   left: 0;
   right: 0;
   padding: 8px 15px;
   font-size: 12px;
-  color: #666;
+  color: #999;
   text-align: center;
-  background-color: rgba(245, 245, 245, 0.8);
+  background-color: transparent;
 }
 </style>
