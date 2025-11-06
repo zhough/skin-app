@@ -3,8 +3,7 @@
     <!-- 页面头部 -->
     <view class="page-header">
       <text class="page-title">AI皮肤科医生助手</text>
-      <text class="page-subtitle">在这里您可以向AI医生咨询任何皮肤相关的问题</text>
-      <text class="disclaimer-small">AI的回答仅供参考，不能替代专业医疗诊断</text>
+      <text class="page-subtitle">测试模式 - 仅用于对话功能测试</text>
     </view>
     
     <!-- 聊天内容区域 -->
@@ -24,7 +23,8 @@
             ></image>
           </view>
           <view class="message-content">
-            <text>{{ message.content }}</text>
+            <!-- 用v-html渲染格式化后的内容 -->
+            <view v-html="formatStreamText(message.content)"></view>
           </view>
         </view>
         
@@ -41,7 +41,7 @@
     <view class="input-area">
       <textarea 
         v-model="userInput" 
-        placeholder="请输入您的皮肤相关问题..." 
+        placeholder="请输入测试消息..." 
         class="input-textarea"
         @keypress.enter.prevent="sendMessage"
         rows="1"
@@ -55,34 +55,34 @@
         发送
       </button>
     </view>
-    
-    <!-- 底部免责声明 -->
-    <view class="bottom-disclaimer">
-      <text>© 2025 皮肤健康助手 | 本应用仅供参考，不能替代专业医疗诊断</text>
-    </view>
   </view>
 </template>
 
 <script setup>
 import { ref, onMounted, watch, nextTick } from 'vue';
 import { getAISkinConsultation } from '@/services/ai-api.js';
-import { getCurrentUser } from '@/services/auth-service.js';
 
-// 用户信息（从全局获取）
-const userInfo = ref({
-  age: '',
-  gender: '',
-  id: '' // 确保包含用户ID
-});
+// 流式文本实时格式化函数
+const formatStreamText = (text) => {
+  if (!text) return '';
+  // 1. 处理列表编号（1. 2. 3. → 换行+缩进+编号）
+  text = text.replace(/(\d+)\.\s{1,2}\*\*/g, '\n  $1. **');
+  // 2. 处理加粗标记（**内容** → HTML加粗标签）
+  text = text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+  // 3. 中文标点后连续空格转为换行（优化段落分隔）
+  text = text.replace(/([。！？；])\s{2,}/g, '$1\n');
+  // 4. 欢迎语后自动换行分段
+  text = text.replace(/欢迎回来。\s+/g, '欢迎回来。\n\n');
+  // 5. 移除多余空行（避免排版混乱）
+  text = text.replace(/\n{3,}/g, '\n\n');
+  return text;
+};
 
-// 皮肤类型
-const skinType = ref('未知');
-
-// 聊天消息列表
+// 聊天消息列表（初始消息）
 const messages = ref([
   {
     role: 'assistant',
-    content: '您好！我是您的AI皮肤科医生助手。我可以帮您解答关于皮肤健康的问题，或者提供一些初步的建议。请问有什么可以帮助您的吗？'
+    content: '测试模式：我已准备好接收消息，请发送测试内容。'
   }
 ]);
 
@@ -95,41 +95,17 @@ const isLoading = ref(false);
 // 聊天容器引用
 const chatContainer = ref(null);
 
-// 页面加载时获取用户信息
+// 页面加载时初始化
 onMounted(() => {
-  const user = getCurrentUser();
-  if (user) {
-    userInfo.value = {
-      ...userInfo.value,
-      ...user
-    };
-  }
-  checkUserInfo();
   scrollToBottom();
 });
 
-// 检查用户信息是否完善
-const checkUserInfo = () => {
-  if (!userInfo.value.age || !userInfo.value.gender || !userInfo.value.id) {
-    const confirmed = window.confirm('请完善个人信息（包括ID、年龄和性别），以便提供更精准的建议');
-    if (confirmed) {
-      window.location.href = '/personal';
-    }
-  }
-};
-
-// 发送消息
+// 发送消息（支持流式响应+实时格式化）
 const sendMessage = async () => {
   const input = userInput.value.trim();
   if (!input || isLoading.value) return;
   
-  // 再次检查用户信息
-  if (!userInfo.value.age || !userInfo.value.gender || !userInfo.value.id) {
-    checkUserInfo();
-    return;
-  }
-  
-  // 添加用户消息（修复不显示问题）
+  // 添加用户消息
   const userMessage = {
     role: 'user',
     content: input
@@ -138,36 +114,58 @@ const sendMessage = async () => {
   
   // 清空输入框
   userInput.value = '';
-  
-  // 滚动到底部
   scrollToBottom();
-  
-  // 显示加载状态
   isLoading.value = true;
   
   try {
-    // 调用API获取回复
-    const response = await getAISkinConsultation({
-      userId: userInfo.value.id, // 明确传递用户ID
+    // 添加AI回复占位符
+    const aiMessageIndex = messages.value.length;
+    messages.value.push({
+      role: 'assistant',
+      content: '' // 初始为空，后续逐步填充
+    });
+
+    // 获取流式响应阅读器
+    const reader = await getAISkinConsultation({
+      userId: 'test_user', // 固定测试用户ID
       userInfo: {
-        age: Number(userInfo.value.age), // 确保是数字类型
-        gender: userInfo.value.gender
+        age: 30, // 固定测试年龄
+        gender: '测试性别' // 固定测试性别
       },
-      skinType: skinType.value,
+      skinType: '测试皮肤类型',
       question: input
     });
-    
-    // 添加AI回复
-    messages.value.push({
-      role: 'assistant',
-      content: response
-    });
+
+    // 处理流式数据（实时格式化+更新UI）
+    const processStream = async () => {
+      const { done, value } = await reader.read();
+      if (done) {
+        isLoading.value = false;
+        return;
+      }
+
+      // 解码并格式化当前数据块
+      const chunk = new TextDecoder().decode(value);
+      const formattedChunk = formatStreamText(chunk);
+      
+      // 累加格式化后的内容
+      messages.value[aiMessageIndex].content += formattedChunk;
+      scrollToBottom();
+
+      // 继续处理下一个数据块
+      await processStream();
+    };
+
+    // 开始处理流
+    await processStream();
+
   } catch (error) {
+    // 错误处理（替换占位符为错误信息）
     messages.value.push({
       role: 'assistant',
-      content: `抱歉，请求失败: ${error.message}`
+      content: `测试请求失败: ${error.message || '未知错误'}`
     });
-    console.error('API调用失败:', error);
+    console.error('测试模式错误:', error);
   } finally {
     isLoading.value = false;
     scrollToBottom();
@@ -184,13 +182,14 @@ const scrollToBottom = () => {
   });
 };
 
-// 监听消息变化，自动滚动到底部
+// 监听消息变化，自动滚动
 watch(messages, () => {
   scrollToBottom();
 });
 </script>
 
 <style scoped>
+/* 基础样式保持不变，新增格式化相关样式 */
 .ai-chat-page {
   padding-bottom: 80px;
   background-color: #f5f5f5;
@@ -220,11 +219,6 @@ watch(messages, () => {
   display: block;
   margin-bottom: 5px;
   opacity: 0.9;
-}
-
-.disclaimer-small {
-  font-size: 12px;
-  opacity: 0.8;
 }
 
 .chat-container {
@@ -278,10 +272,27 @@ watch(messages, () => {
 .message-content {
   padding: 12px 15px;
   border-radius: 18px;
-  line-height: 1.6;
+  line-height: 1.8; /* 优化行高，提升可读性 */
   font-size: 15px;
   word-break: break-all;
   max-width: calc(100% - 50px);
+  white-space: pre-line; /* 识别换行符 */
+}
+
+/* 格式化相关样式 */
+.message-content strong {
+  font-weight: bold;
+  color: #0051d5; /* 加粗文字颜色加深 */
+}
+
+.message-content ul,
+.message-content ol {
+  margin: 8px 0;
+  padding-left: 20px;
+}
+
+.message-content li {
+  margin: 4px 0;
 }
 
 .user-message .message-content {
@@ -386,17 +397,5 @@ watch(messages, () => {
 .send-button:disabled {
   background-color: #ccc;
   cursor: not-allowed;
-}
-
-.bottom-disclaimer {
-  position: fixed;
-  bottom: 70px;
-  left: 0;
-  right: 0;
-  padding: 8px 15px;
-  font-size: 12px;
-  color: #999;
-  text-align: center;
-  background-color: transparent;
 }
 </style>
