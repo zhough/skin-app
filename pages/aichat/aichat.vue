@@ -27,7 +27,7 @@
       <h1>皮肤病诊断助手</h1>
       
       <!-- 用户ID输入框 -->
-      <div class="id-input">
+      <!-- <div class="id-input">
         <label for="userId">用户ID（必填）</label>
         <input
           type="text"
@@ -36,7 +36,7 @@
           placeholder="例如：00123"
           required
         >
-      </div>
+      </div> -->
       
       <!-- 图片上传区域 -->
       <div 
@@ -80,8 +80,8 @@
 </template>
 
 <script setup>
-import { ref, nextTick } from 'vue';
-
+import { getCurrentUser } from '@/services/auth-service.js';
+import { ref, nextTick, onMounted } from 'vue';
 // 状态管理
 const userId = ref(''); // 用户ID
 const query = ref(''); // 用户输入的问题
@@ -92,6 +92,17 @@ const statusText = ref('就绪'); // 状态提示文本
 const isDragging = ref(false); // 拖拽状态标识
 const messageHistory = ref([]); // 消息历史记录
 const historyRef = ref(null); // 历史消息区域DOM引用
+
+onMounted(() => {
+  const user = getCurrentUser();
+  if (user && user.username) {
+    userId.value = user.username; // 自动把username赋值给userId
+    statusText.value = `已登录：${user.username}`;
+  } else {
+    statusText.value = '未检测到用户信息，请先登录';
+    alert('请先完成注册/登录');
+  }
+});
 
 // 触发文件选择对话框
 const triggerFileInput = () => {

@@ -11,6 +11,7 @@ export default {
         userInfo: {
           age: '',       // 年龄（用户输入）
           gender: '',    // 性别（用户输入）
+          username: '',   //用户名
           updateTime: '' // 最后更新时间
         }
       }
