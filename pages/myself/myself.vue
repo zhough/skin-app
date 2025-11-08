@@ -2,32 +2,32 @@
   <view class="profile-container">
     <!-- 用户基本信息卡片 -->
     <view class="card user-info-card">
-      <div class="card-header">
+      <view class="card-header">
         <text class="card-title">个人信息</text>
         <view class="card-icon">👤</view>
-      </div>
+      </view>
       <view class="user-avatar">
         <text class="avatar-placeholder">{{ userInitial }}</text>
       </view>
       <text class="username">{{ userInfo.username || userInfo.nickname || '个人皮肤档案' }}</text>
-      <div class="user-details">
-        <div class="detail-item">
+      <view class="user-details">
+        <view class="detail-item">
           <span class="detail-label">年龄:</span>
           <span class="detail-value">{{ userInfo.age || '未设置' }}岁</span>
-        </div>
-        <div class="detail-item">
+        </view>
+        <view class="detail-item">
           <span class="detail-label">性别:</span>
           <span class="detail-value">{{ userInfo.gender || '未设置' }}</span>
-        </div>
-      </div>
+        </view>
+      </view>
     </view>
 
     <!-- 诊断记录卡片 -->
     <view class="card records-card" v-if="medicalRecords.length > 0">
-      <div class="card-header">
+      <view class="card-header">
         <text class="card-title">诊断记录</text>
         <view class="card-icon">📋</view>
-      </div>
+      </view>
       <text class="record-count">{{ medicalRecords.length }} 条记录</text>
       <view class="records-list">
         <view class="record-item" v-for="(record, index) in medicalRecords" :key="index">
@@ -39,10 +39,10 @@
 
     <!-- 诊断图像卡片 (新增) -->
     <view class="card images-card" v-if="imageRecords.length > 0">
-      <div class="card-header">
+      <view class="card-header">
         <text class="card-title">诊断图像</text>
         <view class="card-icon">🖼️</view>
-      </div>
+      </view>
       <text class="image-count">{{ imageRecords.length }} 张图像</text>
       <view class="images-list">
         <view class="image-item" v-for="(imageUrl, index) in imageRecords" :key="index">
@@ -71,10 +71,10 @@
 
     <!-- 皮肤综合评分卡片 -->
     <view class="card score-card" v-if="isInfoComplete">
-      <div class="card-header">
+      <view class="card-header">
         <text class="card-title">皮肤综合评分</text>
         <view class="card-icon">⭐</view>
-      </div>
+      </view>
       <view class="score-display">
         <text class="score-number">{{ skinData.overallScore || '--' }}</text>
         <text class="score-label">/ 100</text>
@@ -91,10 +91,10 @@
 
     <!-- 肌肤年龄卡片 -->
     <view class="card age-card" v-if="isInfoComplete">
-      <div class="card-header">
+      <view class="card-header">
         <text class="card-title">肌肤年龄</text>
         <view class="card-icon">🎂</view>
-      </div>
+      </view>
       <view class="age-display">
         <text class="age-number">{{ userInfo.age || 0 }}</text>
         <text class="age-unit">岁</text>
@@ -108,19 +108,19 @@
 
     <!-- 皮肤指标详情卡片 -->
     <view class="card indicators-card" v-if="isInfoComplete">
-      <div class="card-header">
+      <view class="card-header">
         <text class="card-title">皮肤指标详情</text>
         <view class="card-icon">📊</view>
-      </div>
+      </view>
       <view class="indicators-list">
         <view class="indicator-row" v-for="(item, index) in skinData.indicators" :key="index">
-          <div class="indicator-content">
+          <view class="indicator-content">
             <text class="indicator-name">{{ item.name }}</text>
             <view class="indicator-value-container">
               <text class="indicator-value">{{ item.value.toFixed(1) }}</text>
               <text class="indicator-unit">分</text>
             </view>
-          </div>
+          </view>
           <view class="progress-bar">
             <view 
               class="progress-fill" 
@@ -136,10 +136,10 @@
 
     <!-- 未完善信息提示 -->
     <view class="card incomplete-card" v-else>
-      <div class="card-header">
+      <view class="card-header">
         <text class="card-title">提示</text>
         <view class="card-icon">💡</view>
-      </div>
+      </view>
       <text class="incomplete-text">请先完善个人信息，以获取您的专属皮肤档案</text>
       <button class="edit-info-btn" @click="navigateToEditInfo">
         完善信息
@@ -307,7 +307,7 @@ const fetchMedicalRecords = async (userId) => {
 
     // 专门处理path字段 - 存储图像URL
     if (data.path && Array.isArray(data.path)) {
-      imageRecords.value = data.path;
+      imageRecords.value =  data.path;
     }
 
     if (allRecords.length > 0) {
