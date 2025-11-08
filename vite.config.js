@@ -25,7 +25,7 @@ export default defineConfig({
     }
   },
   // 明确设置基础路径
-  base: './',
+  base: '/',
   // 构建配置
   build: {
     outDir: 'dist',
