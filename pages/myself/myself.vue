@@ -307,12 +307,7 @@ const fetchMedicalRecords = async (userId) => {
 
     // 专门处理path字段 - 存储图像URL
     if (data.path && Array.isArray(data.path)) {
-      imageRecords.value = data.path.map(path => {
-        // 直接使用后端返回的路径，代理服务器会处理静态文件服务
-        return path; // 例如: "/images/user123/photo1.png"
-      });
-      
-      console.log('图像路径:', imageRecords.value); // 调试用
+      imageRecords.value = data.path;
     }
 
     if (allRecords.length > 0) {
