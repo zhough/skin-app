@@ -3,32 +3,23 @@
   "version": "1.0.0",
   "description": "uni-app项目",
   "main": "main.js",
+  "type": "module",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "preview": "vite preview"
-  },
-  "dependencies": {
-    "vue": "^3.2.47",
-    "vue-router": "^4.6.3"
-  },
-  "devDependencies": {
-    "@vitejs/plugin-vue": "^4.1.0",
-    "vite": "^4.3.9"
-  },
-  "type": "module"
-},
-{
-  "name": "skin-app",
-  "version": "1.0.0",
-  "scripts": {
-    "dev": "vite",
+    "preview": "vite preview",
     "proxy": "node proxy.js",
     "dev:full": "npm run dev & npm run proxy",
     "start": "node proxy.js"
   },
   "dependencies": {
+    "vue": "^3.2.47",
+    "vue-router": "^4.6.3",
     "express": "^4.18.2",
     "http-proxy-middleware": "^2.0.6"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-vue": "^4.1.0",
+    "vite": "^4.3.9"
   }
 }
