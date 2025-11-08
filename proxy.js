@@ -10,9 +10,9 @@ const __dirname = path.dirname(__filename);
 const app = express();
 
 // 静态文件服务 - 提供 agent-system 目录中的图像
-app.use('/images', express.static(path.join(__dirname, '../agent-system/images')));
+app.use('/images', express.static(path.join(__dirname, '../agent-system')));
 
-console.log('静态文件服务配置:', path.join(__dirname, '../agent-system/images'));
+console.log('静态文件服务配置:', path.join(__dirname, '../agent-system'));
 
 // 日志中间件
 app.use((req, res, next) => {
