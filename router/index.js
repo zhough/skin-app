@@ -10,73 +10,73 @@ const routes = [
   {
     path: '/auth/login',
     name: 'Login',
-    component: () => import('@pages/auth/login.vue'),
+    component: () => import('../pages/auth/login.vue'),
     meta: { requiresAuth: false }
   },
   {
     path: '/auth/user-agreement',
     name: 'UserAgreement',
-    component: () => import('@pages/auth/user-agreement.vue'),
+    component: () => import('../pages/auth/user-agreement.vue'),
     meta: { requiresAuth: false }
   },
   {
     path: '/auth/privacy-policy',
     name: 'PrivacyPolicy',
-    component: () => import('@pages/auth/privacy-policy.vue'),
+    component: () => import('../pages/auth/privacy-policy.vue'),
     meta: { requiresAuth: false }
   },
   {
     path: '/index',
     name: 'Index',
-    component: () => import('@pages/index/index.vue'),
+    component: () => import('../pages/index/index.vue'),
     meta: { requiresAuth: true }
   },
   {
     path: '/knowledge',
     name: 'Knowledge',
-    component: () => import('@pages/knowledge/knowledge.vue'),
+    component: () => import('../pages/knowledge/knowledge.vue'),
     meta: { requiresAuth: true }
   },
   {
     path: '/selfcheck',
     name: 'SelfCheck',
-    component: () => import('@pages/selfcheck/selfcheck.vue'),
+    component: () => import('../pages/selfcheck/selfcheck.vue'),
     meta: { requiresAuth: true }
   },
   {
     path: '/advice',
     name: 'Advice',
-    component: () => import('@pages/advice/advice.vue'),
+    component: () => import('../pages/advice/advice.vue'),
     meta: { requiresAuth: true }
   },
   {
     path: '/picture',
     name: 'Picture',
-    component: () => import('@pages/picture/picture.vue'),
+    component: () => import('../pages/picture/picture.vue'),
     meta: { requiresAuth: true }
   },
   {
     path: '/aichat',
     name: 'AIChat',
-    component: () => import('@pages/aichat/aichat.vue'),
+    component: () => import('../pages/aichat/aichat.vue'),
     meta: { requiresAuth: true }
   },
   {
     path: '/myself',
     name: 'Myself',
-    component: () => import('@pages/myself/myself.vue'),
+    component: () => import('../pages/myself/myself.vue'),
     meta: { requiresAuth: true }
   },
   {
     path: '/personal',
     name: 'Personal',
-    component: () => import('@pages/personal/personal.vue'),
+    component: () => import('../pages/personal/personal.vue'),
     meta: { requiresAuth: true }
   },
   {
     path: '/recommend',
     name: 'Recommend',
-    component: () => import('@pages/recommend/recommend/recommend.vue'),
+    component: () => import('../pages/recommend/recommend/recommend.vue'),
     meta: { requiresAuth: true }
   },
   // 404页面
