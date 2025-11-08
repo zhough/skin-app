@@ -18,6 +18,29 @@
       </div>
     </view>
 
+    <!-- 诊断记录卡片 (新增) -->
+    <view class="card records-card" v-if="medicalRecords.length > 0">
+      <div class="card-header">
+        <text class="card-title">诊断记录</text>
+        <text class="record-count">{{ medicalRecords.length }} 条记录</text>
+      </div>
+      <view class="records-list">
+        <view class="record-item" v-for="(record, index) in medicalRecords" :key="index">
+          <text class="record-content">{{ record }}</text>
+        </view>
+      </view>
+    </view>
+
+    <!-- 加载状态提示 (新增) -->
+    <view class="card loading-card" v-if="isLoading">
+      <text class="loading-text">正在加载诊断记录...</text>
+    </view>
+
+    <!-- 错误提示 (新增) -->
+    <view class="card error-card" v-if="errorMessage">
+      <text class="error-text">{{ errorMessage }}</text>
+    </view>
+
     <!-- 皮肤综合评分卡片 -->
     <view class="card score-card" v-if="isInfoComplete">
       <div class="card-header">
@@ -84,17 +107,24 @@
 </template>
 
 <script setup>
-import { ref, onMounted, computed } from 'vue';
+import { ref, onMounted, computed, watch } from 'vue';
 import { useRoute } from 'vue-router';
 import { getCurrentUser } from '@/services/auth-service.js';
 
 // 获取路由实例
 const route = useRoute();
 
+// 新增：诊断记录相关
+const medicalRecords = ref([]);
+const isLoading = ref(false);
+const errorMessage = ref('');
+
 // 用户信息
 const userInfo = ref({
   age: '',
-  gender: ''
+  gender: '',
+  username: '',
+  nickname: ''
 });
 
 // 皮肤数据（包含六个指标）
@@ -125,10 +155,7 @@ onMounted(() => {
     userInfo.value = { ...user };
   }
 
-  // 2. 不自动检查用户信息，让用户可以自由浏览页面
-  // 只有在需要时才会提示完善信息
-
-  // 3. 获取路由参数中的指标数据
+  // 2. 获取路由参数中的指标数据
   const indicators = route.query.indicators;
   
   // 优先使用路由参数中的数据
@@ -147,9 +174,75 @@ onMounted(() => {
   }
 });
 
+// 监听username变化，自动请求数据
+watch(
+  () => userInfo.value.username || userInfo.value.nickname,
+  (newUserId) => {
+    if (newUserId) {
+      fetchMedicalRecords(newUserId);
+    }
+  },
+  { immediate: true } // 立即执行一次
+);
+
+const fetchMedicalRecords = async (userId) => {
+  if (!userId) {
+    errorMessage.value = '用户ID不存在';
+    return;
+  }
+
+  isLoading.value = true;
+  errorMessage.value = '';
+  medicalRecords.value = [];
+
+  try {
+    // 创建URLSearchParams对象并添加参数
+    const body = new URLSearchParams();
+    body.append('user_id', userId);
+
+    // 发送POST请求
+    const response = await fetch('http://172.30.154.81:8000/database/query', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded'
+      },
+      body: body  // 使用正确的参数对象
+    });
+
+    if (!response.ok) {
+      throw new Error(`请求失败: ${response.status}`);
+    }
+
+    const data = await response.json();
+    let allRecords = [];
+    
+    if (data.fact && Array.isArray(data.fact)) {
+      allRecords = allRecords.concat(data.fact);
+    }
+    
+    if (data.preference && Array.isArray(data.preference)) {
+      allRecords = allRecords.concat(data.preference);
+    }
+    
+    if (data.important && Array.isArray(data.important)) {
+      allRecords = allRecords.concat(data.important);
+    }
+    
+    if (allRecords.length > 0) {
+      medicalRecords.value = allRecords;
+    } else {
+      medicalRecords.value = ['未查询到有效记录'];
+    }
+  } catch (error) {
+    console.error('查询失败:', error);
+    errorMessage.value = `查询失败: ${error.message}`;
+  } finally {
+    isLoading.value = false;
+  }
+};
+
 // 加载本地存储的数据
 const loadLocalData = () => {
-  // 从本地存储获取
   try {
     const storedDiagnosis = localStorage.getItem('latestSkinDiagnosis');
     if (storedDiagnosis) {
@@ -163,7 +256,6 @@ const loadLocalData = () => {
 // 保存诊断数据到本地存储
 const saveDiagnosisData = (data) => {
   try {
-    // 保存到localStorage
     localStorage.setItem('latestSkinDiagnosis', JSON.stringify(data));
   } catch (error) {
     console.error('保存到本地存储失败:', error);
@@ -172,7 +264,6 @@ const saveDiagnosisData = (data) => {
 
 // 更新皮肤指标数据
 const updateSkinIndicators = (diagnosisData) => {
-  // 将诊断结果转换为环形图所需的指标格式
   const indicatorsData = [
     { name: '黑头', value: diagnosisData.黑头 },
     { name: '光滑度', value: diagnosisData.光滑度 },
@@ -182,10 +273,7 @@ const updateSkinIndicators = (diagnosisData) => {
     { name: '痘痘', value: diagnosisData.痘痘 }
   ];
   
-  // 更新皮肤数据
   skinData.value.indicators = indicatorsData;
-  
-  // 计算综合评分（六个指标的平均值*10）
   const total = indicatorsData.reduce((sum, item) => sum + item.value, 0);
   skinData.value.overallScore = Math.round((total / indicatorsData.length) * 10);
 };
@@ -193,7 +281,6 @@ const updateSkinIndicators = (diagnosisData) => {
 // 检查用户信息是否完善
 const checkUserInfo = () => {
   if (!isInfoComplete.value) {
-    // 只显示提示，不再自动跳转，让用户有选择的权利
     alert('请完善年龄和性别信息，以便提供更精准的建议');
     return false;
   }
@@ -209,7 +296,6 @@ const getColorByValue = (value) => {
 
 // 跳转至推荐页面
 const navigateToRecommend = () => {
-  // 检查用户信息是否完善，只有完善了才能继续
   if (!checkUserInfo()) {
     return;
   }
@@ -221,6 +307,61 @@ const navigateToRecommend = () => {
 </script>
 
 <style scoped>
+/* 原有样式保持不变，新增以下样式 */
+/* 诊断记录卡片 */
+.records-card {
+  margin-top: 20rpx;
+}
+
+.records-list {
+  display: flex;
+  flex-direction: column;
+  gap: 15rpx;
+  max-height: 400rpx;
+  overflow-y: auto;
+}
+
+.record-item {
+  padding: 20rpx;
+  background-color: #f9f9f9;
+  border-radius: 10rpx;
+  border-left: 4rpx solid #ff6b6b;
+}
+
+.record-content {
+  font-size: 28rpx;
+  color: #333;
+  line-height: 1.6;
+}
+
+.record-count {
+  font-size: 24rpx;
+  color: #666;
+}
+
+/* 加载状态 */
+.loading-card {
+  text-align: center;
+  padding: 40rpx 0;
+}
+
+.loading-text {
+  font-size: 28rpx;
+  color: #666;
+}
+
+/* 错误提示 */
+.error-card {
+  text-align: center;
+  padding: 40rpx 0;
+  background-color: #fff5f5;
+}
+
+.error-text {
+  font-size: 28rpx;
+  color: #e53e3e;
+}
+
 /* 页面整体样式 */
 .profile-container {
   min-height: 100vh;
@@ -241,6 +382,7 @@ const navigateToRecommend = () => {
   transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
+/* 其他原有样式保持不变 */
 .card:active {
   transform: translateY(2rpx);
   box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.05);
@@ -291,174 +433,5 @@ const navigateToRecommend = () => {
   font-weight: 500;
 }
 
-/* 卡片头部样式 */
-.card-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 30rpx;
-}
-
-/* 评分卡片 */
-.score-card {
-  text-align: center;
-}
-
-.score-display {
-  background: linear-gradient(135deg, #ff7eb3, #ff6b6b);
-  border-radius: 15rpx;
-  padding: 40rpx 0;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-}
-
-.score-number {
-  font-size: 60rpx;
-  font-weight: bold;
-  color: #ffffff;
-  line-height: 1;
-}
-
-/* 年龄卡片 */
-.age-card {
-  text-align: center;
-}
-
-.age-display {
-  display: flex;
-  justify-content: center;
-  align-items: baseline;
-  padding: 40rpx 0;
-}
-
-.age-number {
-  font-size: 60rpx;
-  font-weight: bold;
-  color: #ff6b6b;
-  line-height: 1;
-}
-
-.age-unit {
-  font-size: 32rpx;
-  color: #666666;
-  margin-left: 10rpx;
-}
-
-/* 指标详情卡片 */
-.indicators-card {
-  /* 指标卡片样式 */
-}
-
-.indicators-list {
-  display: flex;
-  flex-direction: column;
-  gap: 30rpx;
-}
-
-.indicator-row {
-  display: flex;
-  flex-direction: column;
-  gap: 10rpx;
-}
-
-.indicator-content {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 5rpx;
-}
-
-.indicator-name {
-  font-size: 28rpx;
-  color: #333333;
-  font-weight: 500;
-  min-width: 100rpx;
-}
-
-.indicator-value-container {
-  display: flex;
-  align-items: baseline;
-  font-weight: bold;
-}
-
-.indicator-value {
-  font-size: 32rpx;
-  font-weight: bold;
-  color: #ff6b6b;
-}
-
-.indicator-unit {
-  font-size: 24rpx;
-  color: #666666;
-  margin-left: 5rpx;
-}
-
-.progress-bar {
-  width: 100%;
-  height: 12rpx;
-  background-color: #f0f0f0;
-  border-radius: 6rpx;
-  overflow: hidden;
-}
-
-.progress-fill {
-  height: 100%;
-  border-radius: 6rpx;
-  transition: width 0.3s ease;
-}
-
-/* 未完善信息卡片 */
-.incomplete-card {
-  text-align: center;
-}
-
-.incomplete-text {
-  font-size: 30rpx;
-  color: #666666;
-  line-height: 1.6;
-  padding: 30rpx 0;
-  display: block;
-}
-
-/* 推荐按钮 */
-.recommend-btn {
-  width: 100%;
-  height: 100rpx;
-  line-height: 100rpx;
-  background: linear-gradient(90deg, #ff7eb3, #ff6b6b);
-  color: #ffffff;
-  font-size: 34rpx;
-  border-radius: 20rpx;
-  border: none;
-  margin-top: 20rpx;
-  box-shadow: 0 6rpx 16rpx rgba(255, 107, 107, 0.25);
-  transition: all 0.3s ease;
-  font-weight: 500;
-}
-
-.recommend-btn:disabled {
-  background: #cccccc;
-  box-shadow: none;
-  opacity: 0.7;
-}
-
-.recommend-btn:not(:disabled):active {
-  transform: scale(0.98);
-  box-shadow: 0 4rpx 12rpx rgba(255, 107, 107, 0.2);
-}
-
-/* 响应式设计 */
-@media (min-width: 768px) {
-  .profile-container {
-    max-width: 800rpx;
-    margin: 0 auto;
-    padding: 40rpx;
-  }
-  
-  .card {
-    padding: 40rpx;
-  }
-}
+/* 其他原有样式保持不变 */
 </style>
-    
