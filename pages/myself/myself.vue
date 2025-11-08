@@ -4,7 +4,11 @@
     <view class="card user-info-card">
       <div class="card-header">
         <text class="card-title">个人信息</text>
+        <view class="card-icon">👤</view>
       </div>
+      <view class="user-avatar">
+        <text class="avatar-placeholder">{{ userInitial }}</text>
+      </view>
       <text class="username">{{ userInfo.username || userInfo.nickname || '个人皮肤档案' }}</text>
       <div class="user-details">
         <div class="detail-item">
@@ -18,26 +22,30 @@
       </div>
     </view>
 
-    <!-- 诊断记录卡片 (新增) -->
+    <!-- 诊断记录卡片 -->
     <view class="card records-card" v-if="medicalRecords.length > 0">
       <div class="card-header">
         <text class="card-title">诊断记录</text>
-        <text class="record-count">{{ medicalRecords.length }} 条记录</text>
+        <view class="card-icon">📋</view>
       </div>
+      <text class="record-count">{{ medicalRecords.length }} 条记录</text>
       <view class="records-list">
         <view class="record-item" v-for="(record, index) in medicalRecords" :key="index">
+          <view class="record-icon">📝</view>
           <text class="record-content">{{ record }}</text>
         </view>
       </view>
     </view>
 
-    <!-- 加载状态提示 (新增) -->
+    <!-- 加载状态提示 -->
     <view class="card loading-card" v-if="isLoading">
+      <view class="loading-spinner"></view>
       <text class="loading-text">正在加载诊断记录...</text>
     </view>
 
-    <!-- 错误提示 (新增) -->
+    <!-- 错误提示 -->
     <view class="card error-card" v-if="errorMessage">
+      <view class="error-icon">⚠️</view>
       <text class="error-text">{{ errorMessage }}</text>
     </view>
 
@@ -45,9 +53,19 @@
     <view class="card score-card" v-if="isInfoComplete">
       <div class="card-header">
         <text class="card-title">皮肤综合评分</text>
+        <view class="card-icon">⭐</view>
       </div>
       <view class="score-display">
         <text class="score-number">{{ skinData.overallScore || '--' }}</text>
+        <text class="score-label">/ 100</text>
+      </view>
+      <view class="score-progress">
+        <view class="score-progress-bar">
+          <view 
+            class="score-progress-fill" 
+            :style="{ width: `${(skinData.overallScore || 0)}%` }"
+          ></view>
+        </view>
       </view>
     </view>
 
@@ -55,16 +73,25 @@
     <view class="card age-card" v-if="isInfoComplete">
       <div class="card-header">
         <text class="card-title">肌肤年龄</text>
+        <view class="card-icon">🎂</view>
       </div>
       <view class="age-display">
         <text class="age-number">{{ userInfo.age || 0 }}</text>
         <text class="age-unit">岁</text>
       </view>
+      <view class="age-comparison" v-if="userInfo.age">
+        <text class="comparison-text" :class="getAgeComparisonClass()">
+          {{ getAgeComparisonText() }}
+        </text>
+      </view>
     </view>
 
     <!-- 皮肤指标详情卡片 -->
     <view class="card indicators-card" v-if="isInfoComplete">
-      <text class="card-title">皮肤指标详情</text>
+      <div class="card-header">
+        <text class="card-title">皮肤指标详情</text>
+        <view class="card-icon">📊</view>
+      </div>
       <view class="indicators-list">
         <view class="indicator-row" v-for="(item, index) in skinData.indicators" :key="index">
           <div class="indicator-content">
@@ -79,7 +106,7 @@
               class="progress-fill" 
               :style="{
                 width: `${item.value * 10}%`,
-                backgroundColor: getColorByValue(item.value)
+                background: getGradientByValue(item.value)
               }"
             ></view>
           </view>
@@ -91,8 +118,12 @@
     <view class="card incomplete-card" v-else>
       <div class="card-header">
         <text class="card-title">提示</text>
+        <view class="card-icon">💡</view>
       </div>
       <text class="incomplete-text">请先完善个人信息，以获取您的专属皮肤档案</text>
+      <button class="edit-info-btn" @click="navigateToEditInfo">
+        完善信息
+      </button>
     </view>
 
     <!-- 推荐按钮 -->
@@ -100,8 +131,10 @@
       class="recommend-btn" 
       @click="navigateToRecommend"
       :disabled="!isInfoComplete"
+      :class="{ 'disabled': !isInfoComplete }"
     >
-      查看护肤品建议
+      <text class="btn-text">查看护肤品建议</text>
+      <view class="btn-icon">➔</view>
     </button>
   </view>
 </template>
@@ -127,6 +160,12 @@ const userInfo = ref({
   nickname: ''
 });
 
+// 计算用户首字母
+const userInitial = computed(() => {
+  const name = userInfo.value.username || userInfo.value.nickname || '用户';
+  return name.charAt(0).toUpperCase();
+});
+
 // 皮肤数据（包含六个指标）
 const skinData = ref({
   overallScore: 0,
@@ -146,6 +185,22 @@ const skinData = ref({
 const isInfoComplete = computed(() => {
   return !!userInfo.value.age && !!userInfo.value.gender;
 });
+
+// 获取年龄比较文本
+const getAgeComparisonText = () => {
+  const age = parseInt(userInfo.value.age);
+  if (age < 25) return '比实际年龄年轻';
+  if (age < 35) return '与实际年龄相符';
+  return '比实际年龄成熟';
+};
+
+// 获取年龄比较样式类
+const getAgeComparisonClass = () => {
+  const age = parseInt(userInfo.value.age);
+  if (age < 25) return 'comparison-good';
+  if (age < 35) return 'comparison-normal';
+  return 'comparison-bad';
+};
 
 // 页面加载时执行
 onMounted(() => {
@@ -287,11 +342,11 @@ const checkUserInfo = () => {
   return true;
 };
 
-// 根据指标值获取对应颜色
-const getColorByValue = (value) => {
-  if (value <= 3) return '#ff7694'; // 较差 - 红色
-  if (value <= 6) return '#df4a6f'; // 一般 - 玫红色
-  return '#f01e56'; // 良好 - 深粉色
+// 根据指标值获取渐变颜色
+const getGradientByValue = (value) => {
+  if (value <= 3) return 'linear-gradient(90deg, #ff7694, #ff4d7a)';
+  if (value <= 6) return 'linear-gradient(90deg, #df4a6f, #c93a5e)';
+  return 'linear-gradient(90deg, #f01e56, #d81b4d)';
 };
 
 // 跳转至推荐页面
@@ -304,68 +359,20 @@ const navigateToRecommend = () => {
     url: '/pages/recommend/recommend'
   });
 };
+
+// 跳转至编辑信息页面
+const navigateToEditInfo = () => {
+  uni.navigateTo({
+    url: '/pages/edit-profile/edit-profile'
+  });
+};
 </script>
 
 <style scoped>
-/* 原有样式保持不变，新增以下样式 */
-/* 诊断记录卡片 */
-.records-card {
-  margin-top: 20rpx;
-}
-
-.records-list {
-  display: flex;
-  flex-direction: column;
-  gap: 15rpx;
-  max-height: 400rpx;
-  overflow-y: auto;
-}
-
-.record-item {
-  padding: 20rpx;
-  background-color: #f9f9f9;
-  border-radius: 10rpx;
-  border-left: 4rpx solid #ff6b6b;
-}
-
-.record-content {
-  font-size: 28rpx;
-  color: #333;
-  line-height: 1.6;
-}
-
-.record-count {
-  font-size: 24rpx;
-  color: #666;
-}
-
-/* 加载状态 */
-.loading-card {
-  text-align: center;
-  padding: 40rpx 0;
-}
-
-.loading-text {
-  font-size: 28rpx;
-  color: #666;
-}
-
-/* 错误提示 */
-.error-card {
-  text-align: center;
-  padding: 40rpx 0;
-  background-color: #fff5f5;
-}
-
-.error-text {
-  font-size: 28rpx;
-  color: #e53e3e;
-}
-
 /* 页面整体样式 */
 .profile-container {
   min-height: 100vh;
-  background-color: #f5f7fa;
+  background: linear-gradient(135deg, #f5f7fa 0%, #e4edf5 100%);
   padding: 30rpx 20rpx;
   box-sizing: border-box;
   display: flex;
@@ -376,35 +383,75 @@ const navigateToRecommend = () => {
 /* 通用卡片样式 */
 .card {
   background-color: #ffffff;
-  border-radius: 20rpx;
-  padding: 30rpx;
-  box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.05);
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  border-radius: 24rpx;
+  padding: 40rpx 30rpx;
+  box-shadow: 0 8rpx 24rpx rgba(0, 0, 0, 0.06);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  position: relative;
+  overflow: hidden;
 }
 
-/* 其他原有样式保持不变 */
-.card:active {
-  transform: translateY(2rpx);
-  box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.05);
+.card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 6rpx;
+  background: linear-gradient(90deg, #6a89cc, #4a69bd);
+}
+
+.card:hover {
+  transform: translateY(-4rpx);
+  box-shadow: 0 12rpx 32rpx rgba(0, 0, 0, 0.1);
+}
+
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 25rpx;
 }
 
 .card-title {
-  font-size: 32rpx;
+  font-size: 34rpx;
   font-weight: bold;
-  color: #333333;
-  margin-bottom: 25rpx;
+  color: #2c3e50;
   display: block;
+}
+
+.card-icon {
+  font-size: 36rpx;
 }
 
 /* 用户信息卡片 */
 .user-info-card {
   text-align: center;
+  position: relative;
+}
+
+.user-avatar {
+  width: 120rpx;
+  height: 120rpx;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #6a89cc, #4a69bd);
+  margin: 0 auto 20rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 8rpx 20rpx rgba(106, 137, 204, 0.3);
+}
+
+.avatar-placeholder {
+  font-size: 48rpx;
+  color: white;
+  font-weight: bold;
 }
 
 .username {
-  font-size: 40rpx;
+  font-size: 42rpx;
   font-weight: bold;
-  color: #333333;
+  color: #2c3e50;
   display: block;
   margin-bottom: 30rpx;
 }
@@ -420,18 +467,335 @@ const navigateToRecommend = () => {
   display: flex;
   align-items: center;
   gap: 10rpx;
+  padding: 12rpx 20rpx;
+  background-color: #f8fafc;
+  border-radius: 12rpx;
 }
 
 .detail-label {
   font-size: 28rpx;
-  color: #666666;
+  color: #7f8c8d;
 }
 
 .detail-value {
   font-size: 28rpx;
-  color: #333333;
+  color: #2c3e50;
   font-weight: 500;
 }
 
-/* 其他原有样式保持不变 */
+/* 诊断记录卡片 */
+.records-card {
+  margin-top: 20rpx;
+}
+
+.record-count {
+  font-size: 26rpx;
+  color: #7f8c8d;
+  margin-bottom: 20rpx;
+  display: block;
+}
+
+.records-list {
+  display: flex;
+  flex-direction: column;
+  gap: 20rpx;
+  max-height: 400rpx;
+  overflow-y: auto;
+}
+
+.record-item {
+  padding: 24rpx;
+  background-color: #f8fafc;
+  border-radius: 16rpx;
+  border-left: 6rpx solid #6a89cc;
+  display: flex;
+  align-items: flex-start;
+  gap: 16rpx;
+  transition: background-color 0.2s ease;
+}
+
+.record-item:hover {
+  background-color: #f0f4f8;
+}
+
+.record-icon {
+  font-size: 28rpx;
+  margin-top: 4rpx;
+}
+
+.record-content {
+  font-size: 28rpx;
+  color: #2c3e50;
+  line-height: 1.6;
+  flex: 1;
+}
+
+/* 加载状态 */
+.loading-card {
+  text-align: center;
+  padding: 60rpx 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20rpx;
+}
+
+.loading-spinner {
+  width: 60rpx;
+  height: 60rpx;
+  border: 6rpx solid #f0f4f8;
+  border-top: 6rpx solid #6a89cc;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.loading-text {
+  font-size: 28rpx;
+  color: #7f8c8d;
+}
+
+/* 错误提示 */
+.error-card {
+  text-align: center;
+  padding: 60rpx 0;
+  background-color: #fff5f5;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20rpx;
+}
+
+.error-icon {
+  font-size: 48rpx;
+}
+
+.error-text {
+  font-size: 28rpx;
+  color: #e53e3e;
+}
+
+/* 皮肤综合评分卡片 */
+.score-card {
+  text-align: center;
+}
+
+.score-display {
+  display: flex;
+  justify-content: center;
+  align-items: baseline;
+  margin-bottom: 20rpx;
+}
+
+.score-number {
+  font-size: 72rpx;
+  font-weight: bold;
+  color: #2c3e50;
+}
+
+.score-label {
+  font-size: 32rpx;
+  color: #7f8c8d;
+  margin-left: 10rpx;
+}
+
+.score-progress {
+  width: 100%;
+  padding: 0 20rpx;
+}
+
+.score-progress-bar {
+  height: 16rpx;
+  background-color: #f0f4f8;
+  border-radius: 10rpx;
+  overflow: hidden;
+}
+
+.score-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #6a89cc, #4a69bd);
+  border-radius: 10rpx;
+  transition: width 1s ease;
+}
+
+/* 肌肤年龄卡片 */
+.age-card {
+  text-align: center;
+}
+
+.age-display {
+  display: flex;
+  justify-content: center;
+  align-items: baseline;
+  margin-bottom: 20rpx;
+}
+
+.age-number {
+  font-size: 72rpx;
+  font-weight: bold;
+  color: #2c3e50;
+}
+
+.age-unit {
+  font-size: 32rpx;
+  color: #7f8c8d;
+  margin-left: 10rpx;
+}
+
+.age-comparison {
+  margin-top: 10rpx;
+}
+
+.comparison-text {
+  font-size: 28rpx;
+  padding: 8rpx 20rpx;
+  border-radius: 20rpx;
+  display: inline-block;
+}
+
+.comparison-good {
+  background-color: #e8f6ef;
+  color: #27ae60;
+}
+
+.comparison-normal {
+  background-color: #fff9e6;
+  color: #f39c12;
+}
+
+.comparison-bad {
+  background-color: #fdedec;
+  color: #e74c3c;
+}
+
+/* 皮肤指标详情卡片 */
+.indicators-list {
+  display: flex;
+  flex-direction: column;
+  gap: 30rpx;
+}
+
+.indicator-row {
+  display: flex;
+  flex-direction: column;
+  gap: 12rpx;
+}
+
+.indicator-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.indicator-name {
+  font-size: 28rpx;
+  color: #2c3e50;
+  font-weight: 500;
+}
+
+.indicator-value-container {
+  display: flex;
+  align-items: baseline;
+}
+
+.indicator-value {
+  font-size: 28rpx;
+  font-weight: bold;
+  color: #2c3e50;
+}
+
+.indicator-unit {
+  font-size: 24rpx;
+  color: #7f8c8d;
+  margin-left: 4rpx;
+}
+
+.progress-bar {
+  height: 12rpx;
+  background-color: #f0f4f8;
+  border-radius: 6rpx;
+  overflow: hidden;
+}
+
+.progress-fill {
+  height: 100%;
+  border-radius: 6rpx;
+  transition: width 0.8s ease;
+}
+
+/* 未完善信息提示 */
+.incomplete-card {
+  text-align: center;
+}
+
+.incomplete-text {
+  font-size: 28rpx;
+  color: #7f8c8d;
+  line-height: 1.6;
+  margin-bottom: 30rpx;
+  display: block;
+}
+
+.edit-info-btn {
+  background: linear-gradient(135deg, #6a89cc, #4a69bd);
+  color: white;
+  border: none;
+  border-radius: 50rpx;
+  padding: 20rpx 40rpx;
+  font-size: 28rpx;
+  font-weight: 500;
+  box-shadow: 0 6rpx 16rpx rgba(106, 137, 204, 0.3);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.edit-info-btn:active {
+  transform: translateY(2rpx);
+  box-shadow: 0 4rpx 8rpx rgba(106, 137, 204, 0.3);
+}
+
+/* 推荐按钮 */
+.recommend-btn {
+  background: linear-gradient(135deg, #6a89cc, #4a69bd);
+  color: white;
+  border: none;
+  border-radius: 50rpx;
+  padding: 28rpx 40rpx;
+  font-size: 32rpx;
+  font-weight: 500;
+  box-shadow: 0 8rpx 24rpx rgba(106, 137, 204, 0.4);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 16rpx;
+  margin-top: 20rpx;
+}
+
+.recommend-btn:active {
+  transform: translateY(2rpx);
+  box-shadow: 0 4rpx 12rpx rgba(106, 137, 204, 0.4);
+}
+
+.recommend-btn.disabled {
+  background: #bdc3c7;
+  box-shadow: none;
+  transform: none;
+}
+
+.btn-text {
+  font-size: 32rpx;
+}
+
+.btn-icon {
+  font-size: 28rpx;
+  transition: transform 0.3s ease;
+}
+
+.recommend-btn:active .btn-icon {
+  transform: translateX(4rpx);
+}
 </style>
