@@ -3,7 +3,8 @@ import express from 'express';
 import { createProxyMiddleware } from 'http-proxy-middleware';
 
 const app = express();
-
+const agentSystemPath = path.join(__dirname, '../agent-system/images');
+app.use('/images', express.static(agentSystemPath));
 // 日志中间件
 app.use((req, res, next) => {
   const timestamp = new Date().toLocaleString();
