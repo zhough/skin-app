@@ -82,6 +82,7 @@
 <script setup>
 import { getCurrentUser } from '@/services/auth-service.js';
 import { ref, nextTick, onMounted } from 'vue';
+import '../myself/myself.vue'
 // 状态管理
 const userId = ref(''); // 用户ID
 const query = ref(''); // 用户输入的问题
