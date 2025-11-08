@@ -1,6 +1,6 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import { isLoggedIn } from '../services/auth-service.js'
-import Myself from '../pages/myself/myself.vue'
+
 // 定义路由
 const routes = [
   {
@@ -64,8 +64,7 @@ const routes = [
   {
     path: '/myself',
     name: 'Myself',
-    //component: () => import('../pages/myself/myself.vue'),
-    component: Myself, // 同步导入
+    component: () => import('../pages/myself/myself.vue'),
     meta: { requiresAuth: true }
   },
   {
