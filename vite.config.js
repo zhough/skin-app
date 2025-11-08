@@ -1,6 +1,7 @@
 // vite.config.js
 import { defineConfig } from 'vite'
 import vue from '@vitejs/plugin-vue'
+import path from 'path'
 
 export default defineConfig({
   plugins: [vue()],
@@ -9,48 +10,44 @@ export default defineConfig({
     host: '0.0.0.0',
     open: false,
     cors: true,
+    // 重要：配置HMR使用代理端口
     hmr: {
       host: 'localhost',
       port: 24678,
       protocol: 'ws'
     },
-    // 确保正确处理静态资源
-    fs: {
-      strict: false,
-      allow: ['..']
-    }
+    // 允许服务外部访问
+    allowedHosts: true
   },
   resolve: {
     alias: {
-      '@': '/'
+      '@': path.resolve(__dirname, './')
     }
   },
+  // 明确设置基础路径
   base: '/',
+  // 构建配置
   build: {
     outDir: 'dist',
     assetsDir: 'assets',
-    sourcemap: false,
-    // 优化静态资源输出
+    sourcemap: true,
+    // 确保资源路径正确
+    assetsInlineLimit: 4096,
     rollupOptions: {
       output: {
-        assetFileNames: (assetInfo) => {
-          let extType = assetInfo.name.split('.')[1]
-          if (/png|jpe?g|svg|gif|tiff|bmp|ico/i.test(extType)) {
-            return `assets/img/[name]-[hash][extname]`
-          }
-          if (/css/i.test(extType)) {
-            return `assets/css/[name]-[hash][extname]`
-          }
-          return `assets/[name]-[hash][extname]`
-        }
+        chunkFileNames: 'js/[name]-[hash].js',
+        entryFileNames: 'js/[name]-[hash].js',
+        assetFileNames: '[ext]/[name]-[hash].[ext]'
       }
     }
   },
-  // 确保 CSS 正确输出
+  // CSS配置
   css: {
     devSourcemap: true,
-    modules: {
-      localsConvention: 'camelCase'
+    preprocessorOptions: {
+      scss: {
+        additionalData: `@import "@/styles/variables.scss";`
+      }
     }
   }
 })
