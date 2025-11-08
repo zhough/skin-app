@@ -278,7 +278,7 @@ const fetchMedicalRecords = async (userId) => {
     body.append('user_id', userId);
 
     // 发送POST请求
-    const response = await fetch('http://localhost:5001/query', {
+    const response = await fetch('http://127.0.0.1:5001/query', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/x-www-form-urlencoded'
