@@ -1,8 +1,18 @@
-// proxy.js - 修正后的版本
+// proxy.js - 修正导入问题
 import express from 'express';
 import { createProxyMiddleware } from 'http-proxy-middleware';
+import path from 'path'; // 添加这行导入
+import { fileURLToPath } from 'url'; // 添加这行导入
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const app = express();
+
+// 静态文件服务 - 提供 agent-system 目录中的图像
+app.use('/images', express.static(path.join(__dirname, '../agent-system')));
+
+console.log('静态文件服务配置:', path.join(__dirname, '../agent-system'));
 
 // 日志中间件
 app.use((req, res, next) => {
@@ -11,14 +21,13 @@ app.use((req, res, next) => {
   next();
 });
 
-// API 服务代理 (5000端口) - 修正路径重写
+// API 服务代理 (5000端口)
 const apiProxy = createProxyMiddleware('/api', {
   target: 'http://127.0.0.1:5000',
   changeOrigin: true,
   logLevel: 'warn',
-  // 关键：重写路径，去掉 /api 前缀
   pathRewrite: {
-    '^/api': ''  // 将 /api 替换为空字符串
+    '^/api': ''
   },
   onProxyReq: (proxyReq, req, res) => {
     console.log(`[API代理] ${req.method} ${req.url} -> :5000${proxyReq.path}`);
@@ -28,13 +37,13 @@ const apiProxy = createProxyMiddleware('/api', {
   }
 });
 
-// 数据库服务代理 (5001端口) - 同样修正
+// 数据库服务代理 (5001端口)
 const databaseProxy = createProxyMiddleware('/database', {
   target: 'http://127.0.0.1:5001',
   changeOrigin: true,
   logLevel: 'warn',
   pathRewrite: {
-    '^/database': ''  // 将 /database 替换为空字符串
+    '^/database': ''
   },
   onProxyReq: (proxyReq, req, res) => {
     console.log(`[数据库代理] ${req.method} ${req.url} -> :5001${proxyReq.path}`);
@@ -44,7 +53,7 @@ const databaseProxy = createProxyMiddleware('/database', {
   }
 });
 
-// Vite 前端开发服务器代理 (5002端口) - 保持不变
+// Vite 前端开发服务器代理 (5002端口)
 const viteProxy = createProxyMiddleware({
   target: 'http://127.0.0.1:5002',
   changeOrigin: true,
@@ -76,9 +85,10 @@ app.listen(PORT, '0.0.0.0', () => {
   console.log('🚀 代理服务器启动成功!');
   console.log(`📍 外部访问地址: http://你的服务器IP:${PORT}`);
   console.log('🔧 服务路由配置:');
-  console.log('   /api/*      → http://127.0.0.1:5000/* (去掉/api前缀)');
-  console.log('   /database/* → http://127.0.0.1:5001/* (去掉/database前缀)');
+  console.log('   /api/*      → http://127.0.0.1:5000/*');
+  console.log('   /database/* → http://127.0.0.1:5001/*');
   console.log('   其他路径    → http://127.0.0.1:5002 (前端Vite)');
+  console.log('🖼️  图像服务: /images/* → ~/zhou/agent-system/images/*');
 });
 
 process.on('SIGINT', () => {
