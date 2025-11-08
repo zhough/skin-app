@@ -1,10 +1,10 @@
 // vite.config.js
 import { defineConfig } from 'vite'
-import vue from '@vitejs/plugin-vue'
+import uni from '@dcloudio/vite-plugin-uni'
 import path from 'path'
 
 export default defineConfig({
-  plugins: [vue()],
+  plugins: [uni()],
   server: {
     port: 5002,
     host: '0.0.0.0',
