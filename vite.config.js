@@ -12,9 +12,9 @@ export default defineConfig({
     cors: true,
     // 重要：配置HMR使用代理端口
     hmr: {
-      //host: 'localhost',
-      port: 8000,
-      //protocol: 'ws'
+      host: 'localhost',
+      port: 24678,
+      protocol: 'ws'
     },
     // 允许服务外部访问
     allowedHosts: true
