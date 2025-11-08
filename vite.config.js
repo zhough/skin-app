@@ -5,7 +5,7 @@ import vue from '@vitejs/plugin-vue'
 export default defineConfig({
   plugins: [vue()],
   server: {
-    port: 8000,         // 端口8000
+    port: 5002,         // 端口8000
     host: '0.0.0.0',    // 允许外部访问
     open: true,
     cors: {

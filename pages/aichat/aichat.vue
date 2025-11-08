@@ -269,7 +269,7 @@ const sendRequest = async () => {
     await scrollToBottom();
 
     // 7. 发送请求到后端
-    const response = await fetch('http://172.30.154.81:5000/generate', {
+    const response = await fetch('http://172.30.154.81:8000/api/generate', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
