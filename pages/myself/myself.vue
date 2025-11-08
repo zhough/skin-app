@@ -37,6 +37,26 @@
       </view>
     </view>
 
+    <!-- 诊断图像卡片 (新增) -->
+    <view class="card images-card" v-if="imageRecords.length > 0">
+      <div class="card-header">
+        <text class="card-title">诊断图像</text>
+        <view class="card-icon">🖼️</view>
+      </div>
+      <text class="image-count">{{ imageRecords.length }} 张图像</text>
+      <view class="images-list">
+        <view class="image-item" v-for="(imageUrl, index) in imageRecords" :key="index">
+          <image 
+            :src="imageUrl" 
+            mode="aspectFill"
+            class="diagnosis-image"
+            @click="previewImage(imageUrl, index)"
+          />
+          <text class="image-label">诊断图像 {{ index + 1 }}</text>
+        </view>
+      </view>
+    </view>
+
     <!-- 加载状态提示 -->
     <view class="card loading-card" v-if="isLoading">
       <view class="loading-spinner"></view>
@@ -149,6 +169,7 @@ const route = useRoute();
 
 // 新增：诊断记录相关
 const medicalRecords = ref([]);
+const imageRecords = ref([]); // 专门存储图像URL
 const isLoading = ref(false);
 const errorMessage = ref('');
 
@@ -249,6 +270,7 @@ const fetchMedicalRecords = async (userId) => {
   isLoading.value = true;
   errorMessage.value = '';
   medicalRecords.value = [];
+  imageRecords.value = []; // 清空图像记录
 
   try {
     // 创建URLSearchParams对象并添加参数
@@ -282,7 +304,12 @@ const fetchMedicalRecords = async (userId) => {
     if (data.important && Array.isArray(data.important)) {
       allRecords = allRecords.concat(data.important);
     }
-    
+
+    // 专门处理path字段 - 存储图像URL
+    if (data.path && Array.isArray(data.path)) {
+      imageRecords.value = '~/zhou/agent-system' + data.path;
+    }
+
     if (allRecords.length > 0) {
       medicalRecords.value = allRecords;
     } else {
@@ -294,6 +321,29 @@ const fetchMedicalRecords = async (userId) => {
   } finally {
     isLoading.value = false;
   }
+};
+
+// 图片预览功能
+const previewImage = (currentUrl, currentIndex) => {
+  const urls = imageRecords.value;
+  
+  // 使用uni.previewImage实现图片预览
+  uni.previewImage({
+    current: currentUrl,
+    urls: urls,
+    indicator: 'number',
+    loop: true,
+    success: () => {
+      console.log('图片预览成功');
+    },
+    fail: (err) => {
+      console.error('图片预览失败:', err);
+      uni.showToast({
+        title: '图片预览失败',
+        icon: 'none'
+      });
+    }
+  });
 };
 
 // 加载本地存储的数据
@@ -528,6 +578,54 @@ const navigateToEditInfo = () => {
   color: #2c3e50;
   line-height: 1.6;
   flex: 1;
+}
+
+/* 诊断图像卡片 (新增样式) */
+.images-card {
+  margin-top: 20rpx;
+}
+
+.image-count {
+  font-size: 26rpx;
+  color: #7f8c8d;
+  margin-bottom: 20rpx;
+  display: block;
+}
+
+.images-list {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 20rpx;
+}
+
+.image-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12rpx;
+  padding: 16rpx;
+  background-color: #f8fafc;
+  border-radius: 16rpx;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.image-item:active {
+  transform: scale(0.98);
+}
+
+.diagnosis-image {
+  width: 100%;
+  height: 200rpx;
+  border-radius: 12rpx;
+  background-color: #eef2f7;
+  object-fit: cover;
+  box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.1);
+}
+
+.image-label {
+  font-size: 24rpx;
+  color: #7f8c8d;
+  text-align: center;
 }
 
 /* 加载状态 */
