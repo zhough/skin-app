@@ -1,10 +1,14 @@
 // proxy.js - 修正后的版本
 import express from 'express';
 import { createProxyMiddleware } from 'http-proxy-middleware';
+import path from 'path'; // 添加这行导入
+import { fileURLToPath } from 'url'; // 添加这行导入
 
 const app = express();
-const agentSystemPath = path.join(__dirname, '../agent-system/images');
-app.use('/images', express.static(agentSystemPath));
+// 静态文件服务 - 提供 agent-system 目录中的图像
+app.use('/images', express.static(path.join(__dirname, '../agent-system/images')));
+
+console.log('静态文件服务配置:', path.join(__dirname, '../agent-system/images'));
 // 日志中间件
 app.use((req, res, next) => {
   const timestamp = new Date().toLocaleString();
