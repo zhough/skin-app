@@ -13,7 +13,7 @@ export default defineConfig({
     // 重要：配置HMR使用代理端口
     hmr: {
       host: 'localhost',
-      port: 24678,
+      port: 5002,
       protocol: 'ws'
     },
     // 允许服务外部访问
