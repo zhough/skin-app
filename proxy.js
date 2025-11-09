@@ -65,7 +65,9 @@ const viteProxy = createProxyMiddleware({
     }
   },
   onProxyRes: (proxyRes, req, res) => {
-    if (req.url.endsWith('.css') && proxyRes.headers['content-type']) {
+    // 使用URL解析来检查文件扩展名，忽略查询参数
+    const url = new URL(req.url, 'http://example.com');
+    if (url.pathname.endsWith('.css')) {
       proxyRes.headers['content-type'] = 'text/css; charset=utf-8';
     }
   },

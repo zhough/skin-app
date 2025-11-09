@@ -1,4 +1,3 @@
-// vite.config.js
 import { defineConfig } from 'vite'
 import vue from '@vitejs/plugin-vue'
 import path from 'path'
@@ -10,13 +9,12 @@ export default defineConfig({
     host: '0.0.0.0',
     open: false,
     cors: true,
-    // 重要：配置HMR使用代理端口
+    // 配置HMR
     hmr: {
       host: 'localhost',
       port: 5002,
       protocol: 'ws'
     },
-    // 允许服务外部访问
     allowedHosts: true
   },
   resolve: {
@@ -24,24 +22,26 @@ export default defineConfig({
       '@': path.resolve(__dirname, './')
     }
   },
-  // 明确设置基础路径
   base: '/',
-  // 构建配置
   build: {
     outDir: 'dist',
     assetsDir: 'assets',
     sourcemap: true,
-    // 确保资源路径正确
     assetsInlineLimit: 4096,
     rollupOptions: {
       output: {
         chunkFileNames: 'js/[name]-[hash].js',
         entryFileNames: 'js/[name]-[hash].js',
-        assetFileNames: '[ext]/[name]-[hash].[ext]'
+        // 合并assetFileNames配置，确保CSS文件正确归类
+        assetFileNames: (assetInfo) => {
+          if (assetInfo.name?.endsWith('.css')) {
+            return 'css/[name]-[hash].[ext]';
+          }
+          return '[ext]/[name]-[hash].[ext]';
+        }
       }
     }
   },
-  // CSS配置
   css: {
     devSourcemap: true,
     preprocessorOptions: {
