@@ -11,8 +11,8 @@ export default defineConfig({
     cors: true,
     // 调整 HMR：对外通过代理（8000）访问时，客户端应连接到代理可达的 host/port
     hmr: {
-      host: '172.30.154.81', // 你的服务器对外 IP（把这个替换为实际服务器 IP）
-      port: 8000,            // 浏览器通过 8000 访问代理，HMR 客户端也通过 8000 连接 websocket
+      host: 'localhost', // 你的服务器对外 IP（把这个替换为实际服务器 IP）
+      port: 5002,            // 浏览器通过 8000 访问代理，HMR 客户端也通过 8000 连接 websocket
       protocol: 'ws'
     },
     // 允许服务外部访问
